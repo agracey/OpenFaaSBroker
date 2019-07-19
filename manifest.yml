@@ -1,0 +1,6 @@
+applications:
+- name: OpenFaaSOSBA
+  buildpacks: [ nodejs_buildpack ]
+  command: node src/app.js
+  memory: 128M
+  disk_quota: 384M
