@@ -20,6 +20,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "express-async-router": "^0.1.15",
+    "node-fetch": "^2.6.0",
     "winston": "^3.2.1"
   }
 }
