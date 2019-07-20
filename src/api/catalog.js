@@ -1,5 +1,5 @@
 
-const storeUrl = 'https://raw.githubusercontent.com/openfaas/store/master/functions.json';
+const storeUrl = process.env.STORE_URL || 'https://raw.githubusercontent.com/openfaas/store/master/functions.json';
 const fetch = require("node-fetch");
 
 
