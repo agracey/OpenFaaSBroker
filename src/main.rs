@@ -9,6 +9,6 @@ mod catalog;
 
 fn main() {
     rocket::ignite()
-        .mount("/catalog", routes![catalog::handler])
+        .mount("/v2/catalog", routes![catalog::handler])
         .launch();
 }
