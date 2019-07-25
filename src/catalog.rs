@@ -9,6 +9,10 @@ use rocket_contrib::json::Json;
 use std::collections::HashMap;
 use serde_derive::{Serialize, Deserialize};
 
+use super::faas_store;
+use super::faas_store::{FaasFunction};
+
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SchemaPart {
     r#type: String,
@@ -61,20 +65,6 @@ pub struct Catalog {
     pub services: Vec<Service>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct FaasFunction {
-    pub title: String,
-    pub name: String,
-    pub description: String,
-    pub images: HashMap<String, String>,
-    pub repo_url: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct FaasStore {
-    pub functions: Vec<FaasFunction>,
-    pub version: String,
-}
 
 fn build_plan( (k, v) : (&String, &String)) -> Plan{
   let empty_schema = SchemaPart {
@@ -119,7 +109,7 @@ fn build_service_from_function(func: &FaasFunction) -> Service {
     }
 }
 
-fn build_service_list_from_functions(store: FaasStore) -> Vec<Service> {
+fn build_service_list_from_functions(store: faas_store::FaasStore) -> Vec<Service> {
     store
         .functions
         .iter()
@@ -127,16 +117,11 @@ fn build_service_list_from_functions(store: FaasStore) -> Vec<Service> {
         .collect()
 }
 
-fn get_store() -> Result<FaasStore, Error> {
-    let function_list: FaasStore =
-        reqwest::get("https://raw.githubusercontent.com/openfaas/store/master/functions.json")?
-            .json::<FaasStore>()?;
-    Ok(function_list)
-}
 
 #[get("/")]
 pub fn handler() -> Json<Catalog> {
-    let function_list = get_store().unwrap();
+    let function_list = faas_store::get_store().unwrap();
+
     let c = Catalog {
         services: build_service_list_from_functions(function_list),
     };
