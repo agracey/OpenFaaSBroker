@@ -3,13 +3,12 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde_derive;
 
-use rocket::{get};
+use rocket::get;
 use rocket_contrib::json::Json;
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 use super::faas_store;
-use super::faas_store::{FaasFunction};
-
+use super::faas_store::FaasFunction;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SchemaPart {
@@ -63,33 +62,32 @@ pub struct Catalog {
     pub services: Vec<Service>,
 }
 
+fn build_plan((k, v): (&String, &String)) -> Plan {
+    let empty_schema = SchemaPart {
+        r#type: String::from("object"),
+        properties: String::from(""),
+    };
 
-fn build_plan( (k, v) : (&String, &String)) -> Plan{
-  let empty_schema = SchemaPart {
-    r#type: String::from("object"),
-    properties: String::from("")
-  };
-
-  Plan {
-    id: k.clone(),
-    name: k.clone(),
-    description: format!("Run function on: {}",v),
-    free: true,
-    bindable: true,
-    schemas: SchemaList {
-      service_instance: SchemaListInstance {
-        create: empty_schema.clone(),
-        update: empty_schema.clone()
-      },
-      service_binding: SchemaListBinding {
-        create: empty_schema.clone()
-      }
-    },
-  }
+    Plan {
+        id: k.clone(),
+        name: k.clone(),
+        description: format!("Run function on: {}", v),
+        free: true,
+        bindable: true,
+        schemas: SchemaList {
+            service_instance: SchemaListInstance {
+                create: empty_schema.clone(),
+                update: empty_schema.clone(),
+            },
+            service_binding: SchemaListBinding {
+                create: empty_schema.clone(),
+            },
+        },
+    }
 }
 
 fn build_plans(func: &FaasFunction) -> Vec<Plan> {
-  func.images.iter().map(build_plan).collect()
+    func.images.iter().map(build_plan).collect()
 }
 
 fn build_service_from_function(func: &FaasFunction) -> Service {
@@ -114,7 +112,6 @@ fn build_service_list_from_functions(store: faas_store::FaasStore) -> Vec<Servic
         .map(build_service_from_function)
         .collect()
 }
-
 
 #[get("/")]
 pub fn handler() -> Json<Catalog> {

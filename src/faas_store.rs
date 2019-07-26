@@ -2,8 +2,8 @@ extern crate reqwest;
 extern crate serde_derive;
 
 use reqwest::Error;
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde_derive::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct FaasFunction {
