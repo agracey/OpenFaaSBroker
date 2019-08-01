@@ -1,39 +1,41 @@
 extern crate reqwest;
 extern crate rocket;
 extern crate rocket_contrib;
+extern crate serde_json;
 extern crate serde_derive;
 
 use rocket::get;
 use rocket_contrib::json::Json;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::faas_store;
 use super::faas_store::FaasFunction;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SchemaPart {
     r#type: String,
     properties: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SchemaListInstance {
     pub create: SchemaPart,
     pub update: SchemaPart,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SchemaListBinding {
     pub create: SchemaPart,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SchemaList {
     pub service_instance: SchemaListInstance,
     pub service_binding: SchemaListBinding,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Plan {
     pub id: String,
     pub name: String,
@@ -43,7 +45,7 @@ pub struct Plan {
     pub schemas: SchemaList,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Service {
     pub name: String,
     pub id: String,
@@ -57,7 +59,7 @@ pub struct Service {
     pub plans: Vec<Plan>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Catalog {
     pub services: Vec<Service>,
 }
@@ -116,6 +118,9 @@ fn build_service_list_from_functions(store: faas_store::FaasStore) -> Vec<Servic
 #[get("/")]
 pub fn handler() -> Json<Catalog> {
     let function_list = faas_store::get_store().unwrap();
+
+    let debug = serde_json::to_string(&function_list).unwrap();
+    println!("Catalog {}", debug);
 
     let c = Catalog {
         services: build_service_list_from_functions(function_list),

@@ -26,3 +26,12 @@ pub fn get_store() -> Result<FaasStore, Error> {
             .json::<FaasStore>()?;
     Ok(function_list)
 }
+
+
+pub fn get_image_for_arch(function_name: String, arch_id:String) -> String {
+  let store = get_store().unwrap();
+  let list = store.functions;
+  let func = list.into_iter().find(|func| func.name == function_name).unwrap();
+
+  func.images.get(&arch_id).unwrap().to_string()
+}
