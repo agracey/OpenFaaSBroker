@@ -90,6 +90,18 @@ fn build_dashboard_url () -> String {
     format!("{}/ui/", url)
 }
 
+
+fn build_function_url(function_name: String) -> String {
+    let url = env::var("OPENFAAS_URL").unwrap_or(String::from("http://openfaas.openfaas.svc.local:8080"));
+    format!("{}/functions/{}", url, function_name)
+}
+
+fn get_function_for_instance(instance_id: String) -> Option<openfaas_client::DeployedFunction> {
+    openfaas_client::get_deployed_functions().unwrap()
+        .into_iter()
+        .find(|fun| fun.name.to_string().ends_with(&instance_id))    
+}
+
 // Checks if function exists. Says succeeded if does, in progress if not
 #[get("/<instance_id>/last_operation")]
 pub fn instance_last_operation(instance_id: String) -> Json<LastOperation> {
@@ -130,21 +142,17 @@ pub fn binding_last_operation(instance_id: String, binding_id: String) -> Json<L
 #[get("/<instance_id>")]
 pub fn get_instance(instance_id: String) -> Json<InstanceResponse> {
     
-    
     let function = openfaas_client::get_deployed_functions().unwrap()
         .iter()
         .filter(| fun | fun.name == instance_id)
         .collect::<Vec<&openfaas_client::DeployedFunction>>()
         .first();
 
-
-    let dashboard_url = env::var("OPENFAAS_URL").unwrap();
-    let dashboard_url = &format!("{}/ui/", dashboard_url);
-    
+    let dashboard_url = build_dashboard_url();
 
     //TODO: what should even go here (plan_id)?
     let res = InstanceResponse {
-        dashboard_url: String::from(dashboard_url),
+        dashboard_url: dashboard_url,
         plan_id: String::from("plan_id"),
         service_id: instance_id,
         parameters: None,
@@ -160,14 +168,13 @@ pub fn create_instance(
 ) -> Json<CreateInstanceResponse> {
 
     let function_name = format!("{}-{}", instance.service_id.clone(), &instance_id);
-    
-    
     let image_name = faas_store::get_image_for_arch(instance.service_id.clone(), instance.plan_id.clone());
 
     openfaas_client::deploy_function(function_name, image_name);
+    let dashboard_url = build_dashboard_url();
 
     let res = CreateInstanceResponse {
-        dashboard_url: String::from("http://openfaas.tm.suse.com/ui/"),
+        dashboard_url: dashboard_url,
         operation: Some(instance_id),
     };
 
@@ -180,9 +187,12 @@ pub fn update_instance(
     instance: Json<UpdateInstanceRequest>,
 ) -> Json<CreateInstanceResponse> {
 
+    let dashboard_url = build_dashboard_url();
+
+//TODO?
 
     let res = CreateInstanceResponse {
-        dashboard_url: String::from("url"),
+        dashboard_url: dashboard_url,
         operation: None,
     };
 
@@ -201,11 +211,10 @@ pub fn bind_instance(
     instance: Json<BindInstanceRequest>,
 ) -> Json<BindInstanceResponse> {
 
-    let url = env::var("OPENFAAS_URL").unwrap();
-    let url = &format!("{}/functions/{}", url, instance_id);
+    let func = get_function_for_instance(instance_id).unwrap();
+    let url = build_function_url(func.name);
 
     let mut credentials = HashMap::new();
-
     credentials.insert(String::from("url"), String::from(url));
 
     let res = BindInstanceResponse {
@@ -217,12 +226,19 @@ pub fn bind_instance(
     Json(res)
 }
 
+// Binds are no ops
 #[get("/<instance_id>/service_bindings/<binding_id>")]
 pub fn get_binding(instance_id: String, binding_id: String) -> Json<BindInstanceResponse> {
     
-    
-    let res = BindInstanceResponse {
-        credentials: None,
+    let func = get_function_for_instance(instance_id).unwrap();
+    let url = build_function_url(func.name);
+
+    let mut credentials = HashMap::new();
+    credentials.insert(String::from("url"), String::from(url));
+
+        
+    let mut res = BindInstanceResponse {
+        credentials: Some(credentials),
         parameters: None,
         endpoints: None,
     };
